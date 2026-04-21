@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vox — Anonymous Feedback Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b10;
+    --surface: #0f1318;
+    --border: #1e2530;
+    --teal: #00e5c0;
+    --teal-dim: rgba(0, 229, 192, 0.12);
+    --teal-glow: rgba(0, 229, 192, 0.35);
+    --text: #e8edf5;
+    --muted: #5a6577;
+    --danger: #ff4d6a;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 20px;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,192,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,192,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow blob */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0,229,192,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  /* Header */
+  .brand {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  .brand-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--teal);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 24px var(--teal-glow);
+  }
+
+  .brand h1 {
+    font-family: var(--font-head);
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--text);
+  }
+
+  .brand p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 28px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    letter-spacing: 0.5px;
+  }
+
+  .tab.active {
+    background: var(--teal-dim);
+    color: var(--teal);
+    border: 1px solid rgba(0,229,192,0.2);
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card h2 {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .card .sub {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 28px;
+  }
+
+  .field {
+    margin-bottom: 18px;
+  }
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  input, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input:focus, textarea:focus {
+    border-color: rgba(0,229,192,0.4);
+    box-shadow: 0 0 0 3px rgba(0,229,192,0.07);
+  }
+
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--teal);
+    color: #080b10;
+    font-family: var(--font-head);
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.2px;
+    box-shadow: 0 4px 20px rgba(0,229,192,0.25);
+    margin-top: 8px;
+  }
+
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(0,229,192,0.35); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Result box */
+  .result {
+    display: none;
+    background: var(--bg);
+    border: 1px solid rgba(0,229,192,0.25);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .result.show { display: block; }
+
+  .result-label {
+    font-size: 10px;
+    color: var(--teal);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .result-url {
+    font-size: 13px;
+    color: var(--text);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  .copy-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .copy-btn {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--teal-dim);
+    color: var(--teal);
+    border: 1px solid rgba(0,229,192,0.2);
+    border-radius: 7px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-weight: 500;
+  }
+  .copy-btn:hover { background: rgba(0,229,192,0.2); }
+
+  .goto-btn {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--teal);
+    color: #080b10;
+    border: none;
+    border-radius: 7px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: opacity 0.2s;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .goto-btn:hover { opacity: 0.88; }
+
+  /* Error */
+  .error {
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 10px;
+    display: none;
+  }
+  .error.show { display: block; }
+
+  /* Features row */
+  .features {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-top: 40px;
+  }
+
+  .feat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .feat-icon { font-size: 20px; margin-bottom: 8px; }
+  .feat-title {
+    font-family: var(--font-head);
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .feat-desc { font-size: 10px; color: var(--muted); line-height: 1.5; }
+
+  /* Panel toggle */
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeUp 0.3s ease both; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-logo">
+      <div class="logo-icon">🎙️</div>
+      <h1>Vox</h1>
+    </div>
+    <p>Anonymous feedback boards for teams, classrooms, and communities. No accounts. No traces.</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('create')">Create Room</button>
+    <button class="tab" onclick="switchTab('join')">Join Room</button>
+  </div>
+
+  <!-- Create Panel -->
+  <div class="card panel active" id="panel-create">
+    <h2>New Feedback Room</h2>
+    <p class="sub">Set up a room and share the link — feedback comes in live.</p>
+
+    <div class="field">
+      <label>Room Title</label>
+      <input type="text" id="room-title" placeholder="e.g. Design Review, Weekly Retro..." maxlength="80">
+    </div>
+    <div class="field">
+      <label>Description <span style="color: var(--muted); font-size:10px; text-transform:none;">(optional)</span></label>
+      <textarea id="room-desc" placeholder="What kind of feedback are you collecting?"></textarea>
+    </div>
+
+    <button class="btn" onclick="createRoom()" id="create-btn">Create Room →</button>
+    <div class="error" id="create-error"></div>
+
+    <div class="result" id="create-result">
+      <div class="result-label">✓ Room Created</div>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">FEEDBACK LINK — share this</div>
+        <div class="result-url" id="room-url-display"></div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="copy('room-url-display', this)">Copy Link</button>
+          <a class="goto-btn" id="room-link-btn" target="_blank">Open →</a>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">ADMIN DASHBOARD — keep this private</div>
+        <div class="result-url" id="admin-url-display"></div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="copy('admin-url-display', this)">Copy Link</button>
+          <a class="goto-btn" id="admin-link-btn" target="_blank">Open →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Join Panel -->
+  <div class="card panel" id="panel-join">
+    <h2>Enter a Room</h2>
+    <p class="sub">Got a room code or link? Jump in and leave your thoughts.</p>
+
+    <div class="field">
+      <label>Room Code</label>
+      <input type="text" id="join-code" placeholder="e.g. A3F7B2C1" maxlength="8"
+        oninput="this.value = this.value.toUpperCase()"
+        onkeydown="if(event.key==='Enter') joinRoom()">
+    </div>
+    <button class="btn" onclick="joinRoom()">Join Room →</button>
+    <div class="error" id="join-error"></div>
+  </div>
+
+  <div class="features">
+    <div class="feat">
+      <div class="feat-icon">🔒</div>
+      <div class="feat-title">Anonymous</div>
+      <div class="feat-desc">No accounts, no IP tracking</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">Live</div>
+      <div class="feat-desc">Feedback appears instantly</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🧹</div>
+      <div class="feat-title">Moderation</div>
+      <div class="feat-desc">Admins can remove responses</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const BASE = window.location.origin;
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && tab === 'create') || (i === 1 && tab === 'join'));
+    });
+    document.getElementById('panel-create').classList.toggle('active', tab === 'create');
+    document.getElementById('panel-join').classList.toggle('active', tab === 'join');
+  }
+
+  async function createRoom() {
+    const title = document.getElementById('room-title').value.trim();
+    const desc = document.getElementById('room-desc').value.trim();
+    const errEl = document.getElementById('create-error');
+    const btn = document.getElementById('create-btn');
+
+    errEl.classList.remove('show');
+    if (!title) { errEl.textContent = 'Room title is required.'; errEl.classList.add('show'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
+
+    try {
+      const res = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description: desc })
+      });
+      const data = await res.json();
+
+      const roomUrl = BASE + data.room_url;
+      const adminUrl = BASE + data.admin_url;
+
+      document.getElementById('room-url-display').textContent = roomUrl;
+      document.getElementById('admin-url-display').textContent = adminUrl;
+      document.getElementById('room-link-btn').href = data.room_url;
+      document.getElementById('admin-link-btn').href = data.admin_url;
+      document.getElementById('create-result').classList.add('show');
+      btn.textContent = '✓ Created!';
+    } catch (e) {
+      errEl.textContent = 'Failed to create room. Is the server running?';
+      errEl.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Create Room →';
+    }
+  }
+
+  async function joinRoom() {
+    const code = document.getElementById('join-code').value.trim().toUpperCase();
+    const errEl = document.getElementById('join-error');
+    errEl.classList.remove('show');
+
+    if (!code) { errEl.textContent = 'Enter a room code.'; errEl.classList.add('show'); return; }
+
+    try {
+      const res = await fetch(`/api/rooms/${code}`);
+      if (!res.ok) { errEl.textContent = 'Room not found. Check the code and try again.'; errEl.classList.add('show'); return; }
+      window.location.href = `/room?id=${code}`;
+    } catch (e) {
+      errEl.textContent = 'Could not connect. Is the server running?';
+      errEl.classList.add('show');
+    }
+  }
+
+  function copy(elId, btn) {
+    const text = document.getElementById(elId).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = orig, 1800);
+    });
+  }
+</script>
+</body>
+</html>

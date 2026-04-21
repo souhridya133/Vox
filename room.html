@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vox — Leave Feedback</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b10;
+    --surface: #0f1318;
+    --border: #1e2530;
+    --teal: #00e5c0;
+    --teal-dim: rgba(0, 229, 192, 0.10);
+    --teal-glow: rgba(0, 229, 192, 0.3);
+    --text: #e8edf5;
+    --muted: #5a6577;
+    --danger: #ff4d6a;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,192,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,192,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(0,229,192,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 540px;
+  }
+
+  /* Nav */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+  }
+
+  .nav-brand {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--teal);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .room-chip {
+    background: var(--teal-dim);
+    border: 1px solid rgba(0,229,192,0.2);
+    color: var(--teal);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-weight: 500;
+  }
+
+  /* Room header */
+  .room-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .room-tag {
+    font-size: 10px;
+    color: var(--teal);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--teal);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 8px var(--teal);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .room-header h1 {
+    font-family: var(--font-head);
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+
+  .room-header p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .room-stats {
+    display: flex;
+    gap: 20px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-val {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .stat-lbl {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  /* Closed banner */
+  .closed-banner {
+    display: none;
+    background: rgba(255, 77, 106, 0.08);
+    border: 1px solid rgba(255, 77, 106, 0.25);
+    color: #ff4d6a;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  /* Compose box */
+  .compose {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    animation: fadeUp 0.4s ease 0.1s both;
+  }
+
+  .compose h2 {
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  /* Emoji picker */
+  .emoji-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .emoji-opt {
+    width: 38px;
+    height: 38px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .emoji-opt:hover { border-color: rgba(0,229,192,0.3); background: var(--teal-dim); }
+  .emoji-opt.selected { border-color: var(--teal); background: var(--teal-dim); box-shadow: 0 0 10px rgba(0,229,192,0.15); }
+
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: 14px 16px;
+    outline: none;
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    margin-bottom: 4px;
+  }
+
+  textarea:focus {
+    border-color: rgba(0,229,192,0.4);
+    box-shadow: 0 0 0 3px rgba(0,229,192,0.07);
+  }
+
+  textarea::placeholder { color: var(--muted); }
+
+  .char-count {
+    text-align: right;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .char-count.warn { color: var(--danger); }
+
+  .submit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .anon-note {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .btn {
+    padding: 12px 28px;
+    background: var(--teal);
+    color: #080b10;
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(0,229,192,0.22);
+    white-space: nowrap;
+  }
+
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,229,192,0.32); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .error {
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 10px;
+    display: none;
+  }
+  .error.show { display: block; }
+
+  /* Success state */
+  .success-box {
+    display: none;
+    text-align: center;
+    padding: 32px 20px;
+    animation: fadeUp 0.4s ease both;
+  }
+  .success-box.show { display: block; }
+  .success-icon { font-size: 48px; margin-bottom: 16px; }
+  .success-box h3 {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .success-box p { color: var(--muted); font-size: 13px; }
+  .another-btn {
+    margin-top: 20px;
+    display: inline-block;
+    padding: 10px 24px;
+    background: var(--teal-dim);
+    color: var(--teal);
+    border: 1px solid rgba(0,229,192,0.25);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+    border: none;
+  }
+  .another-btn:hover { background: rgba(0,229,192,0.18); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a class="nav-brand" href="/">🎙️ Vox</a>
+    <span class="room-chip" id="room-chip">...</span>
+  </div>
+
+  <div class="room-header" id="room-header">
+    <div class="room-tag">
+      <div class="live-dot"></div>
+      <span>Live Session</span>
+    </div>
+    <h1 id="room-title">Loading...</h1>
+    <p id="room-desc"></p>
+    <div class="room-stats">
+      <div class="stat">
+        <div class="stat-val" id="stat-count">—</div>
+        <div class="stat-lbl">responses</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="stat-viewers">—</div>
+        <div class="stat-lbl">live viewers</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="closed-banner" id="closed-banner">
+    🔒 This room is currently closed. New feedback is not being accepted.
+  </div>
+
+  <div class="compose" id="compose-box">
+    <h2>Leave your feedback</h2>
+
+    <div class="emoji-row" id="emoji-row">
+      <!-- populated by JS -->
+    </div>
+
+    <textarea id="msg" placeholder="Type your feedback, question, or thought..." maxlength="1000"
+      oninput="updateCount()"></textarea>
+    <div class="char-count" id="char-count">0 / 1000</div>
+
+    <div class="submit-row">
+      <span class="anon-note">🔒 100% anonymous</span>
+      <button class="btn" id="submit-btn" onclick="submitFeedback()">Send →</button>
+    </div>
+    <div class="error" id="sub-error"></div>
+
+    <div class="success-box" id="success-box">
+      <div class="success-icon">✅</div>
+      <h3>Sent!</h3>
+      <p>Your feedback has been delivered anonymously.</p>
+      <button class="another-btn" onclick="sendAnother()">Send another →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const roomId = params.get('id');
+  const EMOJIS = ['💬','💡','❓','🔥','👍','👎','😊','😤','🙏','⚠️'];
+  let selectedEmoji = '💬';
+  let isOpen = true;
+  let ws;
+
+  if (!roomId) window.location.href = '/';
+
+  // Build emoji picker
+  const row = document.getElementById('emoji-row');
+  EMOJIS.forEach(e => {
+    const btn = document.createElement('button');
+    btn.className = 'emoji-opt' + (e === '💬' ? ' selected' : '');
+    btn.textContent = e;
+    btn.onclick = () => {
+      document.querySelectorAll('.emoji-opt').forEach(x => x.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedEmoji = e;
+    };
+    row.appendChild(btn);
+  });
+
+  async function loadRoom() {
+    try {
+      const res = await fetch(`/api/rooms/${roomId}`);
+      if (!res.ok) { document.getElementById('room-title').textContent = 'Room not found'; return; }
+      const room = await res.json();
+      document.getElementById('room-chip').textContent = room.id;
+      document.getElementById('room-title').textContent = room.title;
+      document.getElementById('room-desc').textContent = room.description || 'Drop your thoughts below — fully anonymous.';
+      document.getElementById('stat-count').textContent = room.feedback_count;
+      document.getElementById('stat-viewers').textContent = room.live_viewers;
+      document.title = `Vox — ${room.title}`;
+      setOpen(room.is_open);
+    } catch(e) {
+      document.getElementById('room-title').textContent = 'Could not load room';
+    }
+  }
+
+  function setOpen(open) {
+    isOpen = open;
+    document.getElementById('closed-banner').style.display = open ? 'none' : 'block';
+    document.getElementById('submit-btn').disabled = !open;
+  }
+
+  function connectWS() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}/ws/${roomId}`);
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'viewer_count') {
+        document.getElementById('stat-viewers').textContent = msg.count;
+      } else if (msg.type === 'room_status') {
+        setOpen(msg.is_open);
+      } else if (msg.type === 'new_feedback') {
+        const cur = parseInt(document.getElementById('stat-count').textContent) || 0;
+        document.getElementById('stat-count').textContent = cur + 1;
+      }
+    };
+    ws.onclose = () => setTimeout(connectWS, 3000);
+  }
+
+  function updateCount() {
+    const len = document.getElementById('msg').value.length;
+    const el = document.getElementById('char-count');
+    el.textContent = `${len} / 1000`;
+    el.classList.toggle('warn', len > 900);
+  }
+
+  async function submitFeedback() {
+    const message = document.getElementById('msg').value.trim();
+    const errEl = document.getElementById('sub-error');
+    errEl.classList.remove('show');
+
+    if (!message) { errEl.textContent = 'Please write something before sending.'; errEl.classList.add('show'); return; }
+    if (!isOpen) { errEl.textContent = 'This room is closed.'; errEl.classList.add('show'); return; }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    try {
+      const res = await fetch(`/api/rooms/${roomId}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, emoji: selectedEmoji })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        errEl.textContent = err.detail || 'Failed to send.';
+        errEl.classList.add('show');
+        btn.disabled = false; btn.textContent = 'Send →';
+        return;
+      }
+      document.getElementById('msg').style.display = 'none';
+      document.getElementById('char-count').style.display = 'none';
+      document.querySelector('.emoji-row').style.display = 'none';
+      document.querySelector('.submit-row').style.display = 'none';
+      document.querySelector('.compose h2').style.display = 'none';
+      document.getElementById('success-box').classList.add('show');
+    } catch(e) {
+      errEl.textContent = 'Connection error.';
+      errEl.classList.add('show');
+      btn.disabled = false; btn.textContent = 'Send →';
+    }
+  }
+
+  function sendAnother() {
+    document.getElementById('msg').value = '';
+    document.getElementById('msg').style.display = '';
+    document.getElementById('char-count').style.display = '';
+    document.getElementById('char-count').textContent = '0 / 1000';
+    document.querySelector('.emoji-row').style.display = '';
+    document.querySelector('.submit-row').style.display = '';
+    document.querySelector('.compose h2').style.display = '';
+    document.getElementById('success-box').classList.remove('show');
+    document.getElementById('submit-btn').disabled = false;
+    document.getElementById('submit-btn').textContent = 'Send →';
+  }
+
+  loadRoom();
+  connectWS();
+</script>
+</body>
+</html>
